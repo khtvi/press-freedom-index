@@ -227,6 +227,12 @@ select option{background:var(--ink2);color:var(--paper)}
 .ph-stat-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;color:var(--wire)}
 .ph-stat-value{font-size:1.18rem;font-weight:700;margin-top:.2rem}
 .ph-stat-note{font-size:11px;color:var(--red);margin-top:.18rem}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:.9rem}
+.about-card{background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:2px;padding:1rem;box-shadow:3px 3px 0 rgba(0,0,0,.06)}
+.about-title{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--wire);padding-bottom:.55rem;margin-bottom:.7rem;border-bottom:1px solid #eee}
+.about-card p{font-size:13px;line-height:1.65;color:#333;margin-bottom:.65rem}
+.about-card ul{padding-left:1.1rem}
+.about-card li{font-size:13px;line-height:1.6;color:#333;margin-bottom:.35rem}
 .tooltip-box{position:fixed;z-index:999;background:var(--ink);color:var(--paper);padding:.55rem .7rem;border-radius:2px;font-family:var(--mono);font-size:11px;line-height:1.6;pointer-events:none;opacity:0;transition:opacity .12s;border-left:3px solid var(--red);max-width:220px}
 .empty-state{padding:1.5rem;border:1px dashed rgba(0,0,0,.16);background:#faf7f1;border-radius:4px;font-family:var(--mono);font-size:12px;color:#666;text-align:center}
 @media (max-width:1180px){
@@ -236,7 +242,7 @@ select option{background:var(--ink2);color:var(--paper)}
   .sidebar{position:static;width:auto;border-right:none;border-bottom:2px solid var(--red);overflow:visible}
   .main{margin-left:0;min-height:auto}
   .metrics-strip{grid-template-columns:repeat(2,1fr)}
-  .two-col,.ph-grid,.sidebar-stats,.scale-grid,.filter-grid{grid-template-columns:1fr}
+  .two-col,.ph-grid,.sidebar-stats,.scale-grid,.filter-grid,.about-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -259,6 +265,7 @@ select option{background:var(--ink2);color:var(--paper)}
       <div class="nav-item" data-target="section-insights">Insights</div>
       <div class="nav-item" data-target="section-changes">Changes</div>
       <div class="nav-item" data-target="section-spotlight">Spotlight</div>
+      <div class="nav-item" data-target="section-about">About</div>
     </nav>
   </div>
   <div class="ticker">
@@ -460,6 +467,51 @@ select option{background:var(--ink2);color:var(--paper)}
               <div class="ph-stat-value" id="phDeltaValue">-</div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="section-about">
+      <div class="section-label">
+        <span class="section-number">08</span>
+        <span class="section-title">About and Methodology</span>
+        <span class="section-sub">Project context and report summary</span>
+      </div>
+      <div class="about-grid">
+        <div class="about-card">
+          <div class="about-title">Project Purpose</div>
+          <p>This dashboard was built to make World Press Freedom Index data easier to understand than a raw spreadsheet. It helps users compare countries, inspect changes over time, and see regional patterns from 2014 to 2023.</p>
+          <p>The project addresses the problem that country rankings alone are hard to interpret without context. The dashboard turns rankings and scores into visual evidence for faster analysis.</p>
+        </div>
+        <div class="about-card">
+          <div class="about-title">Who Benefits</div>
+          <ul>
+            <li>Students studying media freedom, governance, and global issues</li>
+            <li>Teachers looking for a practical analytics dashboard example</li>
+            <li>Researchers who need quick country and regional comparison</li>
+            <li>Readers, journalists, and advocacy groups interested in press freedom trends</li>
+          </ul>
+        </div>
+        <div class="about-card">
+          <div class="about-title">What Users Can Do</div>
+          <ul>
+            <li>Compare countries in the same year</li>
+            <li>Track score changes across time</li>
+            <li>Filter by zone, score range, and freedom scale</li>
+            <li>Inspect the map, distribution, and rank-score relationship</li>
+            <li>Focus on one country using the spotlight panel</li>
+            <li>Identify strong improvement and decline patterns</li>
+          </ul>
+        </div>
+        <div class="about-card">
+          <div class="about-title">Data and Tools</div>
+          <p>The dashboard uses the <code>press-freedom_index.xlsx</code> workbook as its source dataset. The app standardizes column names, converts scores to numeric values, and keeps country, year, rank, score, and zone fields for analysis.</p>
+          <p>It is built with Python, Flask, Pandas, Plotly, and Chart.js, and deployed with <code>gunicorn dash_app:server</code>.</p>
+        </div>
+        <div class="about-card">
+          <div class="about-title">Data Interpretation</div>
+          <p>The dashboard shows that press freedom is uneven across countries and regions. Some countries consistently score at the top, while others remain at the bottom, which suggests that long-term political, legal, and safety conditions strongly affect media freedom.</p>
+          <p>The time-based charts also show that a single rank is not enough for interpretation. A country may improve over several years while still ranking low, or it may hold a relatively stronger position while gradually declining. This is why the dashboard combines ranking, trends, regional averages, and change analysis.</p>
         </div>
       </div>
     </section>
