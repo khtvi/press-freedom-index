@@ -134,6 +134,8 @@ TEMPLATE = r"""
   --gold:#c29018;--blue:#163a5f;--line:#d8d0c4;--wire:#7b7b7b;
   --mono:'Courier New','Lucida Console',monospace;
   --serif:'Georgia','Times New Roman',serif;
+  --header-h:122px;
+  --sidebar-w:280px;
 }
 html,body{width:100%;height:100%}
 body{
@@ -141,9 +143,10 @@ body{
   background:var(--paper);
   color:var(--ink);
   background-image:repeating-linear-gradient(0deg,transparent,transparent 29px,rgba(0,0,0,.04) 29px,rgba(0,0,0,.04) 30px);
+  padding-top:var(--header-h);
 }
 .masthead{background:var(--ink);color:var(--paper);border-bottom:4px solid var(--red)}
-.site-header{position:sticky;top:0;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+.site-header{position:fixed;top:0;left:0;right:0;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.2)}
 .masthead-top{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.8rem;border-bottom:1px solid rgba(255,255,255,.12)}
 .masthead-title{font-size:1.95rem;font-weight:900;line-height:1;letter-spacing:-.02em}
 .masthead-title span{color:var(--red2)}
@@ -157,8 +160,8 @@ body{
 .ticker-rail{overflow:hidden;flex:1}
 .ticker-scroll{display:flex;gap:2rem;white-space:nowrap;animation:scroll 30s linear infinite}
 @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 122px)}
-.sidebar{background:var(--ink2);color:var(--paper);padding:1.5rem 1.2rem;border-right:2px solid var(--red);display:flex;flex-direction:column;gap:1.3rem}
+.layout{display:block;min-height:calc(100vh - var(--header-h))}
+.sidebar{position:fixed;top:var(--header-h);left:0;bottom:0;width:var(--sidebar-w);background:var(--ink2);color:var(--paper);padding:1.5rem 1.2rem;border-right:2px solid var(--red);display:flex;flex-direction:column;gap:1.3rem;overflow:hidden}
 .sidebar-heading{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--red2);padding-bottom:7px;border-bottom:1px solid rgba(255,255,255,.12)}
 .status-ok{display:flex;align-items:center;gap:7px;background:rgba(31,122,69,.22);border:1px solid var(--green);border-radius:4px;padding:.7rem .8rem;font-family:var(--mono);font-size:11px;color:var(--green2)}
 .dot-green{width:7px;height:7px;border-radius:50%;background:var(--green2)}
@@ -179,7 +182,7 @@ select option{background:var(--ink2);color:var(--paper)}
 .sidebar-stat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:.7rem}
 .sidebar-stat-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;color:rgba(255,255,255,.45)}
 .sidebar-stat-value{font-size:1.05rem;font-weight:700;color:#fff;margin-top:.2rem}
-.main{padding:1.45rem 1.55rem 2rem;overflow:auto}
+.main{margin-left:var(--sidebar-w);padding:1.45rem 1.55rem 2rem;min-height:calc(100vh - var(--header-h));overflow:visible}
 .metrics-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--ink);border:1px solid var(--ink);border-radius:4px;overflow:hidden}
 .metric-cell{background:var(--paper2);padding:1rem 1.1rem;position:relative;min-height:88px}
 .metric-cell::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ink)}
@@ -234,8 +237,11 @@ select option{background:var(--ink2);color:var(--paper)}
 .tooltip-box{position:fixed;z-index:999;background:var(--ink);color:var(--paper);padding:.55rem .7rem;border-radius:2px;font-family:var(--mono);font-size:11px;line-height:1.6;pointer-events:none;opacity:0;transition:opacity .12s;border-left:3px solid var(--red);max-width:220px}
 .empty-state{padding:1.5rem;border:1px dashed rgba(0,0,0,.16);background:#faf7f1;border-radius:4px;font-family:var(--mono);font-size:12px;color:#666;text-align:center}
 @media (max-width:1180px){
-  .layout{grid-template-columns:1fr}
-  .sidebar{border-right:none;border-bottom:2px solid var(--red)}
+  body{padding-top:0}
+  .site-header{position:static}
+  .layout{display:block}
+  .sidebar{position:static;width:auto;border-right:none;border-bottom:2px solid var(--red);overflow:visible}
+  .main{margin-left:0;min-height:auto}
   .metrics-strip{grid-template-columns:repeat(2,1fr)}
   .two-col,.ph-grid,.sidebar-stats,.scale-grid{grid-template-columns:1fr}
 }
