@@ -94,11 +94,15 @@ YEARLY_STATS["q75"] = DF.groupby("year")["score"].quantile(0.75).values
 COUNTRY_COVERAGE = DF.groupby("country")["year"].nunique().sort_values(ascending=False)
 COUNTRY_VOLATILITY = DF.groupby("country")["score"].std().dropna().sort_values(ascending=False)
 OVERALL_AVG = float(YEARLY_MEANS.mean())
+LATEST_AVG = float(YEARLY_MEANS.loc[LATEST_YEAR])
 DEFAULT_COUNTRIES = [
     c for c in ["Norway", "Finland", "Philippines", "China", "Russia", "United States"]
     if c in DF["country"].values
 ]
 SPOTLIGHT_DEFAULT = "Philippines" if "Philippines" in DF["country"].values else sorted(DF["country"].unique())[0]
+SPOTLIGHT_LATEST = LATEST_DF[LATEST_DF["country"] == SPOTLIGHT_DEFAULT]
+if SPOTLIGHT_LATEST.empty:
+    SPOTLIGHT_LATEST = LATEST_DF.loc[[LATEST_DF["score"].idxmax()]]
 
 
 def zone_stats(selected_df: pd.DataFrame) -> list[dict]:
@@ -116,13 +120,18 @@ def build_payload() -> dict:
     years_payload: dict[str, dict] = {}
     for year in YEARS:
         year_df = DF[DF["year"] == year]
+        spotlight_row = year_df[year_df["country"] == SPOTLIGHT_DEFAULT]
+        if spotlight_row.empty:
+            spotlight_row = year_df.loc[[year_df["score"].idxmax()]]
+        spotlight_record = spotlight_row[["country", "score", "rank"]].iloc[0].to_dict()
         years_payload[str(year)] = {
             "top": year_df.nlargest(10, "score")[["country", "score", "rank"]].to_dict(orient="records"),
             "bottom": year_df.nsmallest(10, "score")[["country", "score", "rank"]].to_dict(orient="records"),
             "zone": zone_stats(year_df),
-            "map": year_df[[c for c in ["country", "score", "iso"] if c in year_df.columns]].to_dict(orient="records"),
+            "map": year_df[[c for c in ["country", "score", "rank", "iso"] if c in year_df.columns]].to_dict(orient="records"),
             "best": year_df.loc[year_df["score"].idxmax(), ["country", "score", "rank"]].to_dict(),
             "worst": year_df.loc[year_df["score"].idxmin(), ["country", "score", "rank"]].to_dict(),
+            "spotlight": spotlight_record,
             "avg": float(year_df["score"].mean()),
             "median": float(year_df["score"].median()),
             "std": float(year_df["score"].std(ddof=0)),
@@ -149,15 +158,23 @@ def build_payload() -> dict:
         "years": [int(year) for year in YEARS],
         "latestYear": LATEST_YEAR,
         "overallAvg": OVERALL_AVG,
+        "latestAvg": LATEST_AVG,
         "countryCount": int(DF["country"].nunique()),
         "countries": sorted(DF["country"].unique().tolist()),
         "defaultCountries": DEFAULT_COUNTRIES,
         "spotlightDefault": SPOTLIGHT_DEFAULT,
+        "latestSpotlight": {
+            "country": str(SPOTLIGHT_LATEST["country"].iloc[0]),
+            "score": float(SPOTLIGHT_LATEST["score"].iloc[0]),
+            "rank": int(SPOTLIGHT_LATEST["rank"].iloc[0]),
+            "deltaVsLatestAvg": float(SPOTLIGHT_LATEST["score"].iloc[0] - LATEST_AVG),
+        },
         "countryCoverage": COUNTRY_COVERAGE.head(1).reset_index().rename(columns={"year": "years"}).to_dict(orient="records"),
         "compareStart": compare_start,
         "compareEnd": compare_end,
         "compareData": compare_df.reset_index().rename(columns={"index": "country"}).to_dict(orient="records"),
         "yearData": years_payload,
+        "yearlyAverageSeries": [{"year": int(year), "score": float(score)} for year, score in YEARLY_MEANS.items()],
         "trendSeries": trend_series,
         "spotlightSeries": spotlight_series,
         "rawRows": len(DF),
@@ -266,7 +283,7 @@ select option{background:var(--ink2);color:var(--paper)}
 .tag.active{background:var(--red);color:#fff}
 .tag:hover{background:var(--red);color:#fff}
 .sidebar-footer{margin-top:auto;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.25);line-height:1.7;border-top:1px solid rgba(255,255,255,.1);padding-top:10px}
-.main{padding:1.5rem 2rem;display:flex;flex-direction:column;gap:2rem;overflow:hidden}
+.main{padding:1.5rem 2rem;display:flex;flex-direction:column;gap:2rem;overflow:auto}
 .page-scale{transform:scale(.88);transform-origin:top left;width:113.6%;height:113.6%}
 .metrics-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--ink);border:1px solid var(--ink);border-radius:4px;overflow:hidden}
 .metric-cell{background:var(--paper2);padding:12px 14px;position:relative;cursor:pointer;transition:background .15s}
@@ -341,12 +358,12 @@ select option{background:var(--ink2);color:var(--paper)}
       </div>
     </div>
     <nav class="masthead-nav">
-      <div class="nav-item active">Rankings</div>
-      <div class="nav-item">Trends</div>
-      <div class="nav-item">Zones</div>
-      <div class="nav-item">World Map</div>
-      <div class="nav-item">Changes</div>
-      <div class="nav-item">🇵🇭 Philippines</div>
+      <div class="nav-item active" data-target="section-rankings">Rankings</div>
+      <div class="nav-item" data-target="section-trends">Trends</div>
+      <div class="nav-item" data-target="section-zones-map">Zones</div>
+      <div class="nav-item" data-target="section-zones-map">World Map</div>
+      <div class="nav-item" data-target="section-changes">Changes</div>
+      <div class="nav-item" data-target="section-spotlight">Philippines</div>
     </nav>
   </div>
   <div class="ticker">
@@ -359,15 +376,16 @@ select option{background:var(--ink2);color:var(--paper)}
 <div class="layout">
   <aside class="sidebar">
     <div>
-      <div class="sidebar-heading">Dataset</div>
-      <div class="upload-zone">
-        <div class="ico">📄</div>
-        <p>press-freedom_index.xlsx</p>
-        <span>Auto-loaded local workbook</span>
-      </div>
+      <div class="sidebar-heading">Data Snapshot</div>
       <div class="status-ok" style="margin-top:8px">
         <div class="dot-green"></div>
         <span>{{ row_count }} rows · {{ country_count }} countries · loaded</span>
+      </div>
+      <div style="font-size:10px;font-family:var(--mono);line-height:1.9;color:rgba(255,255,255,.62);margin-top:10px">
+        <div style="display:flex;justify-content:space-between"><span>Coverage</span><span>{{ year_start }}-{{ year_end }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Latest average</span><span>{{ latest_avg }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Top country</span><span>{{ latest_best }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Lowest score</span><span>{{ latest_worst }}</span></div>
       </div>
     </div>
     <div>
@@ -391,17 +409,12 @@ select option{background:var(--ink2);color:var(--paper)}
         <div style="display:flex;justify-content:space-between"><span style="color:#c0392b">▓ 0–39</span><span>Very Serious</span></div>
       </div>
     </div>
-    <div class="sidebar-footer">
-      BUILT WITH PYTHON<br>
-      Chart.js · Plotly · Flask<br>
-      Deployed on Render
-    </div>
   </aside>
   <main class="main">
     <div class="page-scale">
     <div class="metrics-strip animate" id="metricsStrip"></div>
 
-    <section>
+    <section id="section-rankings">
       <div class="section-label">
         <span class="section-number">01</span>
         <span class="section-title">Country Rankings</span>
@@ -419,7 +432,7 @@ select option{background:var(--ink2);color:var(--paper)}
       </div>
     </section>
 
-    <section>
+    <section id="section-trends">
       <div class="section-label">
         <span class="section-number">02</span>
         <span class="section-title">Score Trends Over Time</span>
@@ -431,7 +444,7 @@ select option{background:var(--ink2);color:var(--paper)}
       </div>
     </section>
 
-    <section>
+    <section id="section-zones-map">
       <div class="section-label">
         <span class="section-number">03 – 04</span>
         <span class="section-title">Zones &amp; World Map</span>
@@ -456,7 +469,7 @@ select option{background:var(--ink2);color:var(--paper)}
       </div>
     </section>
 
-    <section>
+    <section id="section-changes">
       <div class="section-label">
         <span class="section-number">05</span>
         <span class="section-title">Most Improved vs Declined</span>
@@ -474,7 +487,7 @@ select option{background:var(--ink2);color:var(--paper)}
       </div>
     </section>
 
-    <section>
+    <section id="section-spotlight">
       <div class="section-label">
         <span class="section-number" style="background:#0038a8">🇵🇭</span>
         <span class="section-title">Philippines Spotlight</span>
@@ -539,7 +552,7 @@ function yearRecord(year){ return YEAR_DATA[String(year)]; }
 
 function buildMetrics(){
   const rec = yearRecord(state.year);
-  const spotlight = rec.top.find(x => x.country === 'Philippines') || rec.bottom.find(x => x.country === 'Philippines') || rec.best;
+  const spotlight = rec.spotlight || rec.best;
   const delta = spotlight.score - rec.avg;
   const html = [
     {label:'Selected Year', value: state.year, sub:'RSF Annual Index', cls:'highlight'},
@@ -562,9 +575,10 @@ function buildTicker(){
   const el = document.getElementById('tickerScroll');
   const rec = yearRecord(state.year);
   const zoneTop = (rec.zone || [])[0];
+  const spotlight = rec.spotlight || rec.best;
   const items = [
     `Norway leads global rankings with ${rec.best.score.toFixed(1)}`,
-    `Philippines ranks #${(rec.top.find(x=>x.country==='Philippines')||{rank:'—'}).rank} of ${DATA.countryCount}`,
+    `${spotlight.country} ranks #${spotlight.rank} of ${DATA.countryCount}`,
     `Global press freedom average: ${rec.avg.toFixed(1)} / 100`,
     zoneTop ? `${zoneTop.zone} scores highest among all zones` : 'Europe scores highest among all zones',
     `North Korea remains at bottom for the latest year`,
@@ -704,6 +718,7 @@ function buildTrendChart(){
 function buildPhChart(){
   const ctx = document.getElementById('phChart').getContext('2d');
   const series = DATA.spotlightSeries;
+  const avgLookup = new Map((DATA.yearlyAverageSeries || []).map(p => [p.year, p.score]));
   if (phChart) phChart.destroy();
   phChart = new Chart(ctx,{
     type:'line',
@@ -711,7 +726,7 @@ function buildPhChart(){
       labels:series.map(p => p.year),
       datasets:[
         {label:'Philippines',data:series.map(p => p.score),borderColor:'#0038a8',backgroundColor:'rgba(0,56,168,.1)',fill:true,pointRadius:4,borderWidth:2.5,pointBackgroundColor:'#0038a8',tension:0.28},
-        {label:`Global avg (${OVERALL_AVG.toFixed(1)})`,data:series.map(()=>OVERALL_AVG),borderColor:'#c0392b',borderDash:[5,3],borderWidth:1.5,pointRadius:0,fill:false}
+        {label:'Global avg',data:series.map(p => avgLookup.get(p.year) ?? null),borderColor:'#c0392b',borderDash:[5,3],borderWidth:1.5,pointRadius:0,fill:false}
       ]
     },
     options:{
@@ -727,12 +742,12 @@ function buildPhChart(){
 
 function buildMetricsText(){
   buildMetrics();
-  const lastPoint = DATA.spotlightSeries[DATA.spotlightSeries.length - 1];
+  const lastPoint = DATA.latestSpotlight;
   const firstPoint = DATA.spotlightSeries[0];
   document.getElementById('phScoreValue').textContent = `${formatNumber(lastPoint.score)} / 100`;
   document.getElementById('phRankValue').textContent = `#${lastPoint.rank} of ${DATA.countryCount}`;
   document.getElementById('phChangeValue').textContent = `${lastPoint.score - firstPoint.score >= 0 ? '+' : '−'}${formatNumber(Math.abs(lastPoint.score - firstPoint.score))} pts`;
-  document.getElementById('phDeltaValue').textContent = `${(lastPoint.score - yearRecord(state.year).avg) >= 0 ? '+' : ''}${formatNumber(lastPoint.score - yearRecord(state.year).avg)} pts`;
+  document.getElementById('phDeltaValue').textContent = `${lastPoint.deltaVsLatestAvg >= 0 ? '+' : ''}${formatNumber(lastPoint.deltaVsLatestAvg)} pts`;
 }
 
 function refreshAll(){
@@ -763,6 +778,11 @@ document.querySelectorAll('.nav-item').forEach(n => {
   n.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
     n.classList.add('active');
+    const targetId = n.dataset.target;
+    const target = targetId ? document.getElementById(targetId) : null;
+    if (target) {
+      target.scrollIntoView({behavior:'smooth', block:'start'});
+    }
   });
 });
 
@@ -820,10 +840,15 @@ def index():
         country_count=DF["country"].nunique(),
         years=YEARS,
         latest_year=LATEST_YEAR,
+        year_start=YEARS[0],
+        year_end=YEARS[-1],
+        latest_avg=f"{LATEST_AVG:.1f}",
+        latest_best=LATEST_DF.loc[LATEST_DF["score"].idxmax(), "country"],
+        latest_worst=LATEST_DF.loc[LATEST_DF["score"].idxmin(), "country"],
         ph_score=f"{score:.1f}",
         ph_rank=f"#{rank} of {DF['country'].nunique()}",
         ph_change=f"{ph_change:+.1f} pts",
-        ph_delta=f"{ph_delta:+.1f} pts",
+        ph_delta=f"{(score - LATEST_AVG):+.1f} pts",
         data_json=DATA_JSON,
         map_json=MAP_JSON,
     )
