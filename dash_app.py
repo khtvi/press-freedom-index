@@ -134,7 +134,7 @@ TEMPLATE = r"""
   --gold:#c29018;--blue:#163a5f;--line:#d8d0c4;--wire:#7b7b7b;
   --mono:'Courier New','Lucida Console',monospace;
   --serif:'Georgia','Times New Roman',serif;
-  --header-h:122px;
+  --header-h:150px;
   --sidebar-w:280px;
 }
 html,body{width:100%;height:100%}
@@ -165,12 +165,13 @@ body{
 .sidebar-heading{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--red2);padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.12)}
 .status-ok{display:flex;align-items:center;gap:6px;background:rgba(31,122,69,.22);border:1px solid var(--green);border-radius:4px;padding:.5rem .6rem;font-family:var(--mono);font-size:10px;color:var(--green2)}
 .dot-green{width:7px;height:7px;border-radius:50%;background:var(--green2)}
+.filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .filter-group{display:flex;flex-direction:column;gap:5px}
 .filter-label{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.56)}
 select,input{width:100%;padding:.48rem .58rem;border-radius:3px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--paper);font-family:var(--mono);font-size:11px}
 select option{background:var(--ink2);color:var(--paper)}
 .range-labels,.summary-line{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.65)}
-.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
 .tag{background:rgba(196,58,40,.2);border:1px solid var(--red);color:#ffd8d0;font-family:var(--mono);font-size:10px;padding:.22rem .42rem;border-radius:2px;cursor:pointer}
 .tag.active{background:var(--red);color:#fff}
 .scale-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -243,7 +244,7 @@ select option{background:var(--ink2);color:var(--paper)}
   .sidebar{position:static;width:auto;border-right:none;border-bottom:2px solid var(--red);overflow:visible}
   .main{margin-left:0;min-height:auto}
   .metrics-strip{grid-template-columns:repeat(2,1fr)}
-  .two-col,.ph-grid,.sidebar-stats,.scale-grid{grid-template-columns:1fr}
+  .two-col,.ph-grid,.sidebar-stats,.scale-grid,.filter-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -286,33 +287,35 @@ select option{background:var(--ink2);color:var(--paper)}
 
     <div>
       <div class="sidebar-heading">Filters</div>
-      <div class="filter-group">
-        <span class="filter-label">Year</span>
-        <select id="yearSelect"></select>
+      <div class="filter-grid">
+        <div class="filter-group">
+          <span class="filter-label">Year</span>
+          <select id="yearSelect"></select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Zone</span>
+          <select id="zoneSelect"></select>
+        </div>
       </div>
-      <div class="filter-group" style="margin-top:12px">
-        <span class="filter-label">Zone</span>
-        <select id="zoneSelect"></select>
-      </div>
-      <div class="filter-group" style="margin-top:12px">
+      <div class="filter-group" style="margin-top:10px">
         <span class="filter-label">Spotlight Country</span>
         <select id="spotlightSelect"></select>
       </div>
-      <div class="filter-group" style="margin-top:12px">
+      <div class="filter-group" style="margin-top:10px">
         <span class="filter-label">Country Search</span>
         <input id="countrySearch" type="text" placeholder="Filter by country name">
       </div>
-      <div class="filter-group" style="margin-top:12px">
+      <div class="filter-group" style="margin-top:10px">
         <span class="filter-label">Score Range</span>
         <div class="range-labels"><span id="scoreMinLabel">0</span><span id="scoreMaxLabel">100</span></div>
         <input id="scoreMinRange" type="range" min="0" max="100" step="1" value="0">
         <input id="scoreMaxRange" type="range" min="0" max="100" step="1" value="100">
       </div>
-      <div class="filter-group" style="margin-top:12px">
+      <div class="filter-group" style="margin-top:10px">
         <span class="filter-label">Countries (Trend View)</span>
         <div class="tags" id="countryTags"></div>
       </div>
-      <div class="filter-group" style="margin-top:12px">
+      <div class="filter-group" style="margin-top:10px">
         <span class="filter-label">Freedom Scale</span>
         <div class="scale-grid" id="scaleFilters"></div>
       </div>
@@ -331,17 +334,6 @@ select option{background:var(--ink2);color:var(--paper)}
           <div class="sidebar-stat-label">Lowest Score</div>
           <div class="sidebar-stat-value" id="sidebarWorstValue">{{ latest_worst }}</div>
         </div>
-      </div>
-    </div>
-
-    <div>
-      <div class="sidebar-heading">Freedom Scale</div>
-      <div class="freedom-scale">
-        <div class="freedom-row"><span style="color:#2ea85d">85-100</span><span>Good</span></div>
-        <div class="freedom-row"><span style="color:#83bc52">70-84</span><span>Satisfactory</span></div>
-        <div class="freedom-row"><span style="color:#d79a16">55-69</span><span>Problematic</span></div>
-        <div class="freedom-row"><span style="color:#d26a2e">40-54</span><span>Difficult</span></div>
-        <div class="freedom-row"><span style="color:#c43a28">0-39</span><span>Very Serious</span></div>
       </div>
     </div>
   </aside>
@@ -925,7 +917,7 @@ function refreshSpotlightOptions(rows){
 }
 function refreshCountryTags(rows){
   const available = [...new Set(rows.map(row => row.country))];
-  const candidates = [...new Set([...state.countries, state.spotlight, ...DATA.defaultCountries, ...available.slice(0, 6)])].filter(country => available.includes(country)).slice(0, 10);
+  const candidates = [...new Set([...state.countries, state.spotlight, ...DATA.defaultCountries, ...available.slice(0, 5)])].filter(country => available.includes(country)).slice(0, 8);
   const tags = document.getElementById('countryTags');
   tags.innerHTML = '';
   candidates.forEach(country => {
@@ -970,6 +962,12 @@ function refreshAll(){
   buildTrendChart(rows);
   buildSpotlightChart(rows);
   buildSpotlightStats(rows);
+}
+function updateLayoutOffsets(){
+  const header = document.querySelector('.site-header');
+  if (!header) return;
+  const height = header.offsetHeight;
+  document.documentElement.style.setProperty('--header-h', `${height}px`);
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -1027,8 +1025,12 @@ function syncScoreRange(){
 document.getElementById('scoreMinRange').addEventListener('input', syncScoreRange);
 document.getElementById('scoreMaxRange').addEventListener('input', syncScoreRange);
 
+updateLayoutOffsets();
 refreshAll();
-window.addEventListener('resize', refreshAll);
+window.addEventListener('resize', () => {
+  updateLayoutOffsets();
+  refreshAll();
+});
 </script>
 </body>
 </html>
