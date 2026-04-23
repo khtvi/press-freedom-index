@@ -61,6 +61,9 @@ def load_data(data_file: Path) -> pd.DataFrame:
 
     df = df.drop_duplicates()
     df["score"] = pd.to_numeric(df["score"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+    for column in ["political_context", "economic_context", "legal_context", "social_context", "safety"]:
+        if column in df.columns:
+            df[column] = pd.to_numeric(df[column].astype(str).str.replace(",", ".", regex=False), errors="coerce")
     df = df.dropna(subset=["score", "rank", "year", "country"])
     df["year"] = df["year"].astype(int)
     df["rank"] = df["rank"].astype(int)
@@ -90,7 +93,21 @@ LATEST_AVG = float(LATEST_DF["score"].mean())
 
 
 def build_payload() -> dict:
-    all_rows = DF[[c for c in ["year", "country", "score", "rank", "zone", "iso"] if c in DF.columns]].copy()
+    all_rows = DF[[
+        c for c in [
+            "year",
+            "country",
+            "score",
+            "rank",
+            "zone",
+            "iso",
+            "political_context",
+            "economic_context",
+            "legal_context",
+            "social_context",
+            "safety",
+        ] if c in DF.columns
+    ]].copy()
     return {
         "years": [int(year) for year in YEARS],
         "latestYear": LATEST_YEAR,
@@ -184,6 +201,10 @@ select option{background:var(--ink2);color:var(--paper)}
 .m-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--wire);margin-bottom:.35rem}
 .m-value{font-size:1.2rem;font-weight:700;line-height:1.05;color:var(--ink)}
 .m-sub{font-family:var(--mono);font-size:10px;color:var(--wire);margin-top:.35rem}
+.findings-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:1rem}
+.finding-card{background:#fff;border:1px solid rgba(0,0,0,.12);border-left:4px solid var(--red);border-radius:2px;padding:.9rem 1rem;box-shadow:3px 3px 0 rgba(0,0,0,.05)}
+.finding-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--wire);margin-bottom:.45rem}
+.finding-text{font-size:13px;line-height:1.6;color:#333}
 .section{margin-top:1.55rem}
 .section-label{display:flex;align-items:baseline;gap:10px;border-top:3px solid var(--ink);padding-top:.75rem}
 .section-number{font-family:var(--mono);font-size:11px;background:var(--ink);color:var(--paper);padding:2px 7px;border-radius:1px;font-weight:700}
@@ -233,6 +254,12 @@ select option{background:var(--ink2);color:var(--paper)}
 .about-card p{font-size:13px;line-height:1.65;color:#333;margin-bottom:.65rem}
 .about-card ul{padding-left:1.1rem}
 .about-card li{font-size:13px;line-height:1.6;color:#333;margin-bottom:.35rem}
+.subscore-holder{height:280px}
+.table-wrap{overflow:auto;border:1px solid #e5ddd0}
+.data-table{width:100%;border-collapse:collapse;background:#fff}
+.data-table th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--wire);background:#f3ede3;padding:.65rem;border-bottom:1px solid #ddd;position:sticky;top:0}
+.data-table td{font-size:12px;color:#333;padding:.6rem;border-bottom:1px solid #eee}
+.data-table tr:nth-child(even){background:#fcfaf6}
 .tooltip-box{position:fixed;z-index:999;background:var(--ink);color:var(--paper);padding:.55rem .7rem;border-radius:2px;font-family:var(--mono);font-size:11px;line-height:1.6;pointer-events:none;opacity:0;transition:opacity .12s;border-left:3px solid var(--red);max-width:220px}
 .empty-state{padding:1.5rem;border:1px dashed rgba(0,0,0,.16);background:#faf7f1;border-radius:4px;font-family:var(--mono);font-size:12px;color:#666;text-align:center}
 @media (max-width:1180px){
@@ -242,7 +269,7 @@ select option{background:var(--ink2);color:var(--paper)}
   .sidebar{position:static;width:auto;border-right:none;border-bottom:2px solid var(--red);overflow:visible}
   .main{margin-left:0;min-height:auto}
   .metrics-strip{grid-template-columns:repeat(2,1fr)}
-  .two-col,.ph-grid,.sidebar-stats,.scale-grid,.filter-grid,.about-grid{grid-template-columns:1fr}
+  .two-col,.ph-grid,.sidebar-stats,.scale-grid,.filter-grid,.about-grid,.findings-strip{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -339,6 +366,7 @@ select option{background:var(--ink2);color:var(--paper)}
 
   <main class="main">
     <div class="metrics-strip" id="metricsStrip"></div>
+    <div class="findings-strip" id="findingsStrip"></div>
 
     <section class="section" id="section-rankings">
       <div class="section-label">
@@ -447,6 +475,8 @@ select option{background:var(--ink2);color:var(--paper)}
           <div>
             <div class="card-title" id="spotlightChartTitle">Score Over Time vs Filtered Average</div>
             <div class="canvas-holder"><canvas id="phChart"></canvas></div>
+            <div class="card-title" style="margin-top:1rem">Context Score Profile</div>
+            <div class="subscore-holder" id="subscorePlot"></div>
           </div>
           <div class="ph-stat">
             <div class="ph-stat-item">
@@ -513,6 +543,27 @@ select option{background:var(--ink2);color:var(--paper)}
           <p>The dashboard shows that press freedom is uneven across countries and regions. Some countries consistently score at the top, while others remain at the bottom, which suggests that long-term political, legal, and safety conditions strongly affect media freedom.</p>
           <p>The time-based charts also show that a single rank is not enough for interpretation. A country may improve over several years while still ranking low, or it may hold a relatively stronger position while gradually declining. This is why the dashboard combines ranking, trends, regional averages, and change analysis.</p>
         </div>
+        <div class="about-card">
+          <div class="about-title">Limitations</div>
+          <ul>
+            <li>The dataset is yearly and country-level, so it cannot show event-level media incidents.</li>
+            <li>The dashboard supports comparison and trend reading, but it does not prove causation.</li>
+            <li>Interpretation depends on the available variables in the source workbook and filtered view.</li>
+            <li>Results should be read as analytical summaries, not as a complete explanation of national media systems.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="section-table">
+      <div class="section-label">
+        <span class="section-number">09</span>
+        <span class="section-title">Filtered Data Table</span>
+        <span class="section-sub">Visible rows for the current view</span>
+      </div>
+      <div class="card" style="margin-top:.9rem">
+        <div class="card-title">Top Visible Rows</div>
+        <div class="table-wrap" id="filteredTable"></div>
       </div>
     </section>
   </main>
@@ -525,7 +576,12 @@ const ALL_ROWS = DATA.allRows.map(row => ({
   year: Number(row.year),
   score: Number(row.score),
   rank: Number(row.rank),
-  zone: row.zone || 'Unspecified'
+  zone: row.zone || 'Unspecified',
+  political_context: row.political_context != null ? Number(row.political_context) : null,
+  economic_context: row.economic_context != null ? Number(row.economic_context) : null,
+  legal_context: row.legal_context != null ? Number(row.legal_context) : null,
+  social_context: row.social_context != null ? Number(row.social_context) : null,
+  safety: row.safety != null ? Number(row.safety) : null
 }));
 const ISO_COL = ALL_ROWS.some(row => row.iso) ? 'iso' : null;
 const FREEDOM_BANDS = {
@@ -656,6 +712,26 @@ function buildMetrics(rows){
       <div class="m-value">${card.value}</div>
       <div class="m-sub">${card.sub}</div>
     </div>`).join('');
+}
+function buildFindings(rows){
+  const container = document.getElementById('findingsStrip');
+  if (!rows.length) {
+    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No findings are available for the current filters.</div>';
+    return;
+  }
+  const avg = mean(rows.map(row => row.score));
+  const best = sortDesc(rows)[0];
+  const worst = sortAsc(rows)[0];
+  const changes = compareRows(rows);
+  const improved = changes.filter(item => item.change > 0).sort((a, b) => b.change - a.change)[0];
+  const declined = changes.filter(item => item.change < 0).sort((a, b) => a.change - b.change)[0];
+  const zoneLeader = zoneStats(rows)[0];
+  const findings = [
+    {title:'Top Finding', text:`${best.country} has the highest visible score at ${formatNumber(best.score)}, while ${worst.country} is lowest at ${formatNumber(worst.score)}.`},
+    {title:'Regional Reading', text: zoneLeader ? `${zoneLeader.zone} has the strongest visible zone average at ${formatNumber(zoneLeader.score)}. The filtered average is ${formatNumber(avg)}.` : `The filtered average score is ${formatNumber(avg)}.`},
+    {title:'Change Over Time', text: improved && declined ? `${improved.country} shows the strongest improvement (${formatNumber(improved.change)} pts), while ${declined.country} shows the largest decline (${formatNumber(declined.change)} pts).` : 'There is not enough year-to-year comparison data for change analysis in this filtered view.'}
+  ];
+  container.innerHTML = findings.map(item => `<div class="finding-card"><div class="finding-title">${item.title}</div><div class="finding-text">${item.text}</div></div>`).join('');
 }
 function buildTicker(rows){
   const el = document.getElementById('tickerScroll');
@@ -935,6 +1011,39 @@ function buildSpotlightChart(rows){
     }
   });
 }
+function buildSubscorePlot(rows){
+  const spotlight = spotlightRow(rows);
+  const targetId = 'subscorePlot';
+  if (!spotlight) {
+    renderEmpty(targetId, 'No spotlight country is available.');
+    return;
+  }
+  const metrics = [
+    ['Political', spotlight.political_context],
+    ['Economic', spotlight.economic_context],
+    ['Legal', spotlight.legal_context],
+    ['Social', spotlight.social_context],
+    ['Safety', spotlight.safety]
+  ].filter(item => item[1] != null && !Number.isNaN(item[1]));
+  if (!metrics.length) {
+    renderEmpty(targetId, 'Context score fields are not available for this country.');
+    return;
+  }
+  Plotly.react(targetId, [{
+    type: 'bar',
+    x: metrics.map(item => item[0]),
+    y: metrics.map(item => item[1]),
+    marker: {color: ['#163a5f','#c29018','#c43a28','#2f6690','#1f7a45']},
+    hovertemplate: '%{x}: %{y:.2f}<extra></extra>'
+  }], {
+    margin: {l: 30, r: 10, t: 6, b: 40},
+    paper_bgcolor: '#ffffff',
+    plot_bgcolor: '#ffffff',
+    font: {family: 'Georgia, serif', size: 12, color: '#101010'},
+    yaxis: {title: 'Score', range: [0, 100], gridcolor: 'rgba(0,0,0,.07)'},
+    xaxis: {gridcolor: 'rgba(0,0,0,0)'}
+  }, {displayModeBar:false, responsive:true});
+}
 function buildSpotlightStats(rows){
   const spotlight = spotlightRow(rows);
   if (!spotlight) return;
@@ -952,6 +1061,28 @@ function buildSpotlightStats(rows){
   document.getElementById('phRankValue').textContent = `#${spotlight.rank}`;
   document.getElementById('phChangeValue').textContent = `${spotlight.score - first.score >= 0 ? '+' : ''}${formatNumber(spotlight.score - first.score)} pts`;
   document.getElementById('phDeltaValue').textContent = `${spotlight.score - avg >= 0 ? '+' : ''}${formatNumber(spotlight.score - avg)} pts`;
+}
+function buildFilteredTable(rows){
+  const target = document.getElementById('filteredTable');
+  if (!rows.length) {
+    target.innerHTML = '<div class="empty-state">No rows match the current filters.</div>';
+    return;
+  }
+  const headers = ['Rank', 'Country', 'Zone', 'Score'];
+  const body = sortDesc(rows).slice(0, 20).map(row => `
+    <tr>
+      <td>#${row.rank}</td>
+      <td>${row.country}</td>
+      <td>${row.zone}</td>
+      <td>${formatNumber(row.score)}</td>
+    </tr>`).join('');
+  target.innerHTML = `
+    <table class="data-table">
+      <thead>
+        <tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr>
+      </thead>
+      <tbody>${body}</tbody>
+    </table>`;
 }
 function refreshSpotlightOptions(rows){
   const select = document.getElementById('spotlightSelect');
@@ -992,6 +1123,7 @@ function refreshAll(){
   const rows = currentRows();
   buildTicker(rows);
   buildMetrics(rows);
+  buildFindings(rows);
   refreshSpotlightOptions(rows);
   refreshCountryTags(rows);
   updateSidebar(rows);
@@ -1005,7 +1137,9 @@ function refreshAll(){
   buildChangeList('declined', rows, false);
   buildTrendChart(rows);
   buildSpotlightChart(rows);
+  buildSubscorePlot(rows);
   buildSpotlightStats(rows);
+  buildFilteredTable(rows);
 }
 function updateLayoutOffsets(){
   const header = document.querySelector('.site-header');
