@@ -28,6 +28,16 @@ warnings.filterwarnings('ignore')
 # Set seaborn theme at the very top — must come before any chart rendering
 sns.set_theme(style='whitegrid')
 
+plt.rcParams.update({
+    'font.family': 'serif',
+    'font.serif': ['Georgia', 'Times New Roman', 'DejaVu Serif'],
+    'axes.titlesize': 14,
+    'axes.titleweight': 'bold',
+    'axes.labelsize': 11,
+    'xtick.labelsize': 9,
+    'ytick.labelsize': 9,
+})
+
 
 # =============================================================================
 # PAGE CONFIG
@@ -131,12 +141,14 @@ st.markdown("""
         color: var(--pf-deep-blue);
     }
     .main-title {
-        font-size: 2.3rem; font-weight: 800;
+        font-size: 2.35rem; font-weight: 800;
         color: var(--pf-deep-blue); margin-bottom: 0.1rem;
         letter-spacing: 0.2px;
+        font-family: Georgia, 'Times New Roman', serif;
     }
     .subtitle {
-        font-size: 1rem; color: #334155; margin-bottom: 0.9rem;
+        font-size: 0.98rem; color: #334155; margin-bottom: 0.9rem;
+        font-family: 'Georgia', 'Times New Roman', serif;
     }
     .dashboard-strip {
         display: flex; flex-wrap: wrap; gap: 0.6rem;
@@ -270,6 +282,22 @@ st.markdown("""
         font-weight: 700;
         letter-spacing: 0.01em;
     }
+    .chart-card {
+        background: #ffffff;
+        border: 1px solid #dbe6f2;
+        border-radius: 16px;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+        padding: 0.7rem 0.8rem 0.2rem 0.8rem;
+        margin-bottom: 0.9rem;
+    }
+    .chart-card-title {
+        font-size: 1rem;
+        color: var(--pf-deep-blue);
+        font-weight: 800;
+        margin-bottom: 0.45rem;
+        letter-spacing: 0.01em;
+        font-family: Georgia, 'Times New Roman', serif;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -366,8 +394,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    '<div class="subtitle">Exploratory Data Analysis &nbsp;|&nbsp; '
-    '2014–2023 &nbsp;|&nbsp; Reporters Without Borders (RSF)</div>',
+    '<div class="subtitle">Live press freedom dashboard</div>',
     unsafe_allow_html=True
 )
 
@@ -395,6 +422,22 @@ latest_df   = df[df['year'] == latest_year].copy()
 # overall_avg = mean across all years (not just selected year)
 # Used as the reference line in the Philippines chart — consistent across all x-values
 overall_avg = float(np.mean(df.groupby('year')['score'].mean().values))
+yearly_stats = (
+    df.groupby('year')['score']
+    .agg(['mean', 'median', 'std', 'min', 'max'])
+    .reset_index()
+)
+yearly_stats['q25'] = df.groupby('year')['score'].quantile(0.25).values
+yearly_stats['q75'] = df.groupby('year')['score'].quantile(0.75).values
+
+country_volatility = (
+    df.groupby('country')['score']
+    .std()
+    .dropna()
+    .sort_values(ascending=False)
+)
+country_coverage = df.groupby('country')['year'].nunique().sort_values(ascending=False)
+latest_rank_corr = float(np.corrcoef(latest_df['rank'], latest_df['score'])[0][1])
 
 # =============================================================================
 # SIDEBAR BRANDING
@@ -404,59 +447,30 @@ with st.sidebar:
         """
         <div class="sidebar-brand">
             <div class="kicker">Press Freedom Desk</div>
-            <div class="brand-title">World Press Freedom Index</div>
-            <div class="brand-subtitle">A newsroom-style dashboard for comparing freedom, pressure, and change across countries.</div>
+            <div class="brand-title">Press Freedom</div>
+            <div class="brand-subtitle">World Press Freedom Index dashboard</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="sidebar-section-label">Navigation</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-section-label">Sections</div>', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="sidebar-nav">
             <div class="sidebar-nav-item">Overview</div>
             <div class="sidebar-nav-item">Trends</div>
+            <div class="sidebar-nav-item">Signals</div>
             <div class="sidebar-nav-item">Country Drilldown</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="sidebar-section-label">Press Pulse</div>', unsafe_allow_html=True)
-    st.markdown(
-        f"""
-        <div class="sidebar-rail">
-            <strong>Coverage:</strong> {df["year"].min()}–{df["year"].max()}<br>
-            <strong>Countries:</strong> {df["country"].nunique()}<br>
-            <strong>Current year:</strong> {latest_year}<br>
-            <strong>Latest avg score:</strong> {latest_df['score'].mean():.1f}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="sidebar-section-label">About</div>', unsafe_allow_html=True)
-    st.caption("Built with Python, pandas, Plotly, seaborn, and Streamlit.")
-    st.caption("Designed to deploy on Render.")
-
 st.markdown(
-    (
-        '<div class="dashboard-strip">'
-        f'<div class="dashboard-chip">Dataset: <b>{DATA_FILE.name}</b></div>'
-        f'<div class="dashboard-chip">Coverage: <b>{df["year"].min()}-{df["year"].max()}</b></div>'
-        f'<div class="dashboard-chip">Countries: <b>{df["country"].nunique()}</b></div>'
-        f'<div class="dashboard-chip">Rows: <b>{len(df):,}</b></div>'
-        '</div>'
-    ),
+    '<div class="control-panel">',
     unsafe_allow_html=True
 )
-
-
-# =============================================================================
-# DASHBOARD CONTROLS
-# =============================================================================
-st.markdown('<div class="control-panel">', unsafe_allow_html=True)
 st.markdown('<div class="section-header">Control Center</div>', unsafe_allow_html=True)
 
 default_countries = [
@@ -577,6 +591,32 @@ with ic3:
         unsafe_allow_html=True
     )
 
+extra1, extra2, extra3 = st.columns(3)
+with extra1:
+    volatile_year = int(yearly_stats.loc[yearly_stats['std'].idxmax(), 'year'])
+    volatile_value = float(yearly_stats['std'].max())
+    st.markdown(
+        f'<div class="insight-card"><div class="insight-title">Most volatile year</div>'
+        f'<div class="insight-value">{volatile_year} ({volatile_value:.1f} std)</div></div>',
+        unsafe_allow_html=True
+    )
+with extra2:
+    spread_idx = (yearly_stats['max'] - yearly_stats['min']).idxmax()
+    spread_year = int(yearly_stats.loc[spread_idx, 'year'])
+    spread_value = float(yearly_stats.loc[spread_idx, 'max'] - yearly_stats.loc[spread_idx, 'min'])
+    st.markdown(
+        f'<div class="insight-card"><div class="insight-title">Widest country spread</div>'
+        f'<div class="insight-value">{spread_year} ({spread_value:.1f} points)</div></div>',
+        unsafe_allow_html=True
+    )
+with extra3:
+    most_complete = country_coverage.index[0]
+    st.markdown(
+        f'<div class="insight-card"><div class="insight-title">Best coverage</div>'
+        f'<div class="insight-value">{most_complete} ({country_coverage.iloc[0]} years)</div></div>',
+        unsafe_allow_html=True
+    )
+
 st.divider()
 
 st.markdown(
@@ -608,9 +648,10 @@ st.markdown(
 )
 
 
-tab_overview, tab_trends, tab_drilldown = st.tabs([
+tab_overview, tab_trends, tab_signals, tab_drilldown = st.tabs([
     "Overview",
     "Trends",
+    "Signals",
     "Country Drilldown"
 ])
 
@@ -618,47 +659,39 @@ with tab_overview:
     # =============================================================================
     # VISUALIZATION 1 — Top & Bottom Countries
     # =============================================================================
-    st.markdown(
-        f'<div class="section-header">1. Top &amp; Bottom {top_n} Countries</div>',
-        unsafe_allow_html=True
-    )
-
     top10    = selected_df.nlargest(top_n, 'score')
     bottom10 = selected_df.nsmallest(top_n, 'score')
 
-    fig1, axes1 = plt.subplots(1, 2, figsize=(14, 5))
+    with st.container(border=True):
+        st.markdown('<div class="chart-card-title">1. Top &amp; Bottom Countries</div>', unsafe_allow_html=True)
+        fig1, axes1 = plt.subplots(1, 2, figsize=(14, 4.6))
 
-    sns.barplot(
-        data=top10, x='score', y='country',
-        hue='country', palette='Greens_r', legend=False, ax=axes1[0]
-    )
-    axes1[0].set_title(f'Most Free ({selected_year})', fontweight='bold')
-    axes1[0].set_xlabel('Score (0–100)')
-    axes1[0].set_ylabel('')
-    axes1[0].set_xlim(0, 100)
+        sns.barplot(
+            data=top10, x='score', y='country',
+            hue='country', palette='Greens_r', legend=False, ax=axes1[0]
+        )
+        axes1[0].set_title(f'Most Free ({selected_year})', fontweight='bold')
+        axes1[0].set_xlabel('Score')
+        axes1[0].set_ylabel('')
+        axes1[0].set_xlim(0, 100)
 
-    sns.barplot(
-        data=bottom10, x='score', y='country',
-        hue='country', palette='Reds_r', legend=False, ax=axes1[1]
-    )
-    axes1[1].set_title(f'Least Free ({selected_year})', fontweight='bold')
-    axes1[1].set_xlabel('Score (0–100)')
-    axes1[1].set_ylabel('')
-    axes1[1].set_xlim(0, 100)
+        sns.barplot(
+            data=bottom10, x='score', y='country',
+            hue='country', palette='Reds_r', legend=False, ax=axes1[1]
+        )
+        axes1[1].set_title(f'Least Free ({selected_year})', fontweight='bold')
+        axes1[1].set_xlabel('Score')
+        axes1[1].set_ylabel('')
+        axes1[1].set_xlim(0, 100)
 
-    plt.tight_layout()
-    st.pyplot(fig1)
-    plt.close(fig1)
+        plt.tight_layout()
+        st.pyplot(fig1)
+        plt.close(fig1)
 
     # =============================================================================
     # VISUALIZATION 3 — Average Score by Zone
     # =============================================================================
     if region_col:
-        st.markdown(
-            '<div class="section-header">2. Average Score by Zone</div>',
-            unsafe_allow_html=True
-        )
-
         zone_avg = (
             selected_df.groupby(region_col)['score']
             .mean()
@@ -666,181 +699,290 @@ with tab_overview:
             .reset_index()
         )
 
-        fig3, ax3 = plt.subplots(figsize=(10, 4))
-        sns.barplot(
-            data=zone_avg, x='score', y=region_col,
-            hue=region_col, palette='coolwarm', legend=False, ax=ax3
-        )
-        ax3.set_title(
-            f'Average Press Freedom Score by Zone ({selected_year})',
-            fontweight='bold'
-        )
-        ax3.set_xlabel('Average Score')
-        ax3.set_ylabel('')
-        ax3.set_xlim(0, 100)
-        plt.tight_layout()
-        st.pyplot(fig3)
-        plt.close(fig3)
+        with st.container(border=True):
+            st.markdown('<div class="chart-card-title">2. Average Score by Zone</div>', unsafe_allow_html=True)
+            fig3, ax3 = plt.subplots(figsize=(10, 4))
+            sns.barplot(
+                data=zone_avg, x='score', y=region_col,
+                hue=region_col, palette='coolwarm', legend=False, ax=ax3
+            )
+            ax3.set_title(f'Average Score by Zone ({selected_year})', fontweight='bold')
+            ax3.set_xlabel('Average Score')
+            ax3.set_ylabel('')
+            ax3.set_xlim(0, 100)
+            plt.tight_layout()
+            st.pyplot(fig3)
+            plt.close(fig3)
 
     # =============================================================================
     # VISUALIZATION 4 — Interactive World Map
     # =============================================================================
-    st.markdown(
-        '<div class="section-header">3. Interactive World Map</div>',
-        unsafe_allow_html=True
-    )
+    with st.container(border=True):
+        st.markdown('<div class="chart-card-title">3. Interactive World Map</div>', unsafe_allow_html=True)
+        if iso_col:
+            fig_map = px.choropleth(
+                selected_df,
+                locations=iso_col,
+                color='score',
+                hover_name='country',
+                color_continuous_scale='RdYlGn',
+                range_color=(0, 100),
+                labels={'score': 'Freedom Score'}
+            )
+        else:
+            fig_map = px.choropleth(
+                selected_df,
+                locations='country',
+                locationmode='country names',
+                color='score',
+                hover_name='country',
+                color_continuous_scale='RdYlGn',
+                range_color=(0, 100),
+                labels={'score': 'Freedom Score'}
+            )
 
-    if iso_col:
-        fig_map = px.choropleth(
-            selected_df,
-            locations=iso_col,
-            color='score',
-            hover_name='country',
-            color_continuous_scale='RdYlGn',
-            range_color=(0, 100),
-            labels={'score': 'Freedom Score'}
+        fig_map.update_layout(
+            margin=dict(l=0, r=0, t=10, b=0),
+            coloraxis_colorbar=dict(title="Score"),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            geo=dict(
+                showframe=False,
+                showcoastlines=False,
+                showland=True,
+                landcolor='#f8fafc',
+                bgcolor='rgba(0,0,0,0)'
+            )
         )
-    else:
-        fig_map = px.choropleth(
-            selected_df,
-            locations='country',
-            locationmode='country names',
-            color='score',
-            hover_name='country',
-            color_continuous_scale='RdYlGn',
-            range_color=(0, 100),
-            labels={'score': 'Freedom Score'}
-        )
-
-    fig_map.update_layout(
-        margin=dict(l=0, r=0, t=10, b=0),
-        coloraxis_colorbar=dict(title="Score"),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        geo=dict(
-            showframe=False,
-            showcoastlines=False,
-            showland=True,
-            landcolor='#f8fafc',
-            bgcolor='rgba(0,0,0,0)'
-        )
-    )
-    st.plotly_chart(fig_map, use_container_width=True)
+        st.plotly_chart(fig_map, use_container_width=True)
 
 with tab_trends:
     # =============================================================================
     # VISUALIZATION 2 — Score Trends Over Time
     # =============================================================================
-    st.markdown(
-        '<div class="section-header">1. Score Trends Over Time</div>',
-        unsafe_allow_html=True
-    )
+    with st.container(border=True):
+        st.markdown('<div class="chart-card-title">1. Score Trends Over Time</div>', unsafe_allow_html=True)
+        if custom_countries:
+            trend_df = df[df['country'].isin(custom_countries)].copy()
 
-    if custom_countries:
-        trend_df = df[df['country'].isin(custom_countries)].copy()
+            fig2, ax2 = plt.subplots(figsize=(12, 4.6))
+            sns.lineplot(
+                data=trend_df, x='year', y='score',
+                hue='country', marker='o', linewidth=2, ax=ax2
+            )
+            ax2.set_title('Score Trends', fontweight='bold')
+            ax2.set_xlabel('Year')
+            ax2.set_ylabel('Score')
+            ax2.set_xticks(years)
+            ax2.set_xticklabels(years)
 
-        fig2, ax2 = plt.subplots(figsize=(12, 5))
-        sns.lineplot(
-            data=trend_df, x='year', y='score',
-            hue='country', marker='o', linewidth=2, ax=ax2
-        )
-        ax2.set_title('Press Freedom Score Trends', fontweight='bold')
-        ax2.set_xlabel('Year')
-        ax2.set_ylabel('Score (higher = more free)')
-        ax2.set_xticks(years)
-        ax2.set_xticklabels(years)
-
-        ax2.legend(title='Country', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        st.pyplot(fig2)
-        plt.close(fig2)
-    else:
-        st.info("Select at least one country in Control Center to show the trend chart.")
+            ax2.legend(title='Country', bbox_to_anchor=(1.05, 1), loc='upper left')
+            plt.tight_layout()
+            st.pyplot(fig2)
+            plt.close(fig2)
+        else:
+            st.info("Select at least one country in Control Center to show the trend chart.")
 
     # =============================================================================
     # VISUALIZATION 6 — Score Distribution Box Plot (numpy annotations)
     # =============================================================================
-    st.markdown(
-        '<div class="section-header">2. Score Distribution Per Year (Box Plot)</div>',
-        unsafe_allow_html=True
-    )
+    with st.container(border=True):
+        st.markdown('<div class="chart-card-title">2. Score Distribution Per Year</div>', unsafe_allow_html=True)
+        fig6, ax6 = plt.subplots(figsize=(14, 4.6))
 
-    fig6, ax6 = plt.subplots(figsize=(14, 5))
-
-    sns.boxplot(
-        data=df, x='year', y='score',
-        palette='Blues',
-        linewidth=1.2,
-        flierprops=dict(marker='o', markersize=3, alpha=0.4),
-        ax=ax6
-    )
-
-    for i, yr in enumerate(years):
-        yr_scores  = df[df['year'] == yr]['score'].values
-        median_val = np.median(yr_scores)
-        ax6.text(
-            i, median_val + 1.8,
-            f'{median_val:.0f}',
-            ha='center', va='bottom',
-            fontsize=8, color='#1F4E79', fontweight='bold'
+        sns.boxplot(
+            data=df, x='year', y='score',
+            palette='Blues',
+            linewidth=1.2,
+            flierprops=dict(marker='o', markersize=3, alpha=0.4),
+            ax=ax6
         )
 
-    ax6.set_title('Press Freedom Score Distribution by Year', fontweight='bold')
-    ax6.set_xlabel('Year')
-    ax6.set_ylabel('Press Freedom Score')
-    ax6.set_ylim(0, 105)
-    plt.tight_layout()
-    st.pyplot(fig6)
-    plt.close(fig6)
+        for i, yr in enumerate(years):
+            yr_scores  = df[df['year'] == yr]['score'].values
+            median_val = np.median(yr_scores)
+            ax6.text(
+                i, median_val + 1.8,
+                f'{median_val:.0f}',
+                ha='center', va='bottom',
+                fontsize=8, color='#1F4E79', fontweight='bold'
+            )
 
-    st.markdown(
-        f'<div class="stat-box">📊 <b>numpy stats for {selected_year}:</b> '
-        f'Mean = {yr_avg:.1f} &nbsp;|&nbsp; '
-        f'Median = {yr_median:.1f} &nbsp;|&nbsp; '
-        f'Std Dev = {yr_std:.1f} &nbsp;|&nbsp; '
-        f'25th pct = {np.percentile(scores_arr, 25):.1f} &nbsp;|&nbsp; '
-        f'75th pct = {np.percentile(scores_arr, 75):.1f}'
-        f'</div>',
-        unsafe_allow_html=True
-    )
+        ax6.set_title('Score Distribution by Year', fontweight='bold')
+        ax6.set_xlabel('Year')
+        ax6.set_ylabel('Score')
+        ax6.set_ylim(0, 105)
+        plt.tight_layout()
+        st.pyplot(fig6)
+        plt.close(fig6)
+
+        st.markdown(
+            f'<div class="stat-box">📊 <b>numpy stats for {selected_year}:</b> '
+            f'Mean = {yr_avg:.1f} &nbsp;|&nbsp; '
+            f'Median = {yr_median:.1f} &nbsp;|&nbsp; '
+            f'Std Dev = {yr_std:.1f} &nbsp;|&nbsp; '
+            f'25th pct = {np.percentile(scores_arr, 25):.1f} &nbsp;|&nbsp; '
+            f'75th pct = {np.percentile(scores_arr, 75):.1f}'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+with tab_signals:
+    with st.container(border=True):
+        st.markdown('<div class="chart-card-title">1. Global Pulse</div>', unsafe_allow_html=True)
+        fig_pulse, ax_pulse = plt.subplots(figsize=(12, 4.2))
+        ax_pulse.fill_between(
+            yearly_stats['year'],
+            yearly_stats['q25'],
+            yearly_stats['q75'],
+            color='#dbeafe',
+            alpha=0.9,
+            label='Middle 50% of countries'
+        )
+        ax_pulse.plot(
+            yearly_stats['year'],
+            yearly_stats['mean'],
+            color='#12355b',
+            linewidth=2.6,
+            marker='o',
+            label='Yearly average'
+        )
+        ax_pulse.plot(
+            yearly_stats['year'],
+            yearly_stats['median'],
+            color='#b42318',
+            linewidth=1.9,
+            marker='s',
+            linestyle='--',
+            label='Yearly median'
+        )
+        ax_pulse.set_title('Global Press Freedom Pulse', fontweight='bold')
+        ax_pulse.set_xlabel('Year')
+        ax_pulse.set_ylabel('Score')
+        ax_pulse.set_xticks(years)
+        ax_pulse.set_ylim(0, 100)
+        ax_pulse.legend(frameon=False)
+        plt.tight_layout()
+        st.pyplot(fig_pulse)
+        plt.close(fig_pulse)
+
+        st.markdown(
+            f'<div class="stat-box">📌 <b>Pulse read:</b> the average score moved from {yearly_stats.iloc[0]["mean"]:.1f} in {int(yearly_stats.iloc[0]["year"])} '
+            f'to {yearly_stats.iloc[-1]["mean"]:.1f} in {int(yearly_stats.iloc[-1]["year"])}. '
+            f'The narrowest middle spread was {yearly_stats.loc[yearly_stats["q75"].sub(yearly_stats["q25"]).idxmin(), "year"]}.'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+    if region_col:
+        region_year = (
+            df.groupby([region_col, 'year'])['score']
+            .mean()
+            .reset_index()
+        )
+        region_pivot = region_year.pivot(index=region_col, columns='year', values='score')
+        with st.container(border=True):
+            st.markdown('<div class="chart-card-title">2. Regional Heatmap</div>', unsafe_allow_html=True)
+            fig_heat, ax_heat = plt.subplots(figsize=(13, 4.6))
+            sns.heatmap(
+                region_pivot,
+                cmap='RdYlGn',
+                annot=True,
+                fmt='.1f',
+                linewidths=0.5,
+                linecolor='white',
+                cbar_kws={'label': 'Average score'},
+                ax=ax_heat
+            )
+            ax_heat.set_title('Regional Score Heatmap', fontweight='bold')
+            ax_heat.set_xlabel('Year')
+            ax_heat.set_ylabel('Region')
+            plt.tight_layout()
+            st.pyplot(fig_heat)
+            plt.close(fig_heat)
+
+    with st.container(border=True):
+        st.markdown('<div class="chart-card-title">3. Score vs Rank Relationship</div>', unsafe_allow_html=True)
+        fig_sr, ax_sr = plt.subplots(figsize=(11, 4.6))
+        sns.regplot(
+            data=latest_df,
+            x='score',
+            y='rank',
+            scatter_kws={'alpha': 0.7, 's': 45, 'color': '#12355b'},
+            line_kws={'color': '#b42318', 'lw': 2.2},
+            ax=ax_sr
+        )
+        ax_sr.set_title(f'Latest Year: Score vs Rank ({latest_year})', fontweight='bold')
+        ax_sr.set_xlabel('Score')
+        ax_sr.set_ylabel('Rank (lower is better)')
+        ax_sr.invert_yaxis()
+        ax_sr.text(
+            0.02, 0.95,
+            f'r = {latest_rank_corr:.3f}',
+            transform=ax_sr.transAxes,
+            ha='left',
+            va='top',
+            fontsize=11,
+            fontweight='bold',
+            color='#12355b',
+            bbox=dict(boxstyle='round,pad=0.35', fc='white', ec='#dbe6f2')
+        )
+        plt.tight_layout()
+        st.pyplot(fig_sr)
+        plt.close(fig_sr)
+
+    top_vol = country_volatility.head(10).sort_values()
+    with st.container(border=True):
+        st.markdown('<div class="chart-card-title">4. Most Volatile Countries</div>', unsafe_allow_html=True)
+        fig_vol, ax_vol = plt.subplots(figsize=(11, 4.6))
+        sns.barplot(
+            x=top_vol.values,
+            y=top_vol.index,
+            palette='flare',
+            ax=ax_vol
+        )
+        ax_vol.set_title('Countries with the Biggest Score Swings', fontweight='bold')
+        ax_vol.set_xlabel('Standard deviation of score across years')
+        ax_vol.set_ylabel('Country')
+        plt.tight_layout()
+        st.pyplot(fig_vol)
+        plt.close(fig_vol)
 
 with tab_drilldown:
     # =============================================================================
     # VISUALIZATION 5 — Most Improved vs Most Declined
     # =============================================================================
-    st.markdown(
-        '<div class="section-header">1. Most Improved vs Most Declined</div>',
-        unsafe_allow_html=True
-    )
+    with st.container(border=True):
+        st.markdown('<div class="chart-card-title">1. Most Improved vs Most Declined</div>', unsafe_allow_html=True)
 
-    s_df = (df[df['year'] == yr_start][['country', 'score']]
-            .rename(columns={'score': 'score_start'}))
-    e_df = (df[df['year'] == yr_end  ][['country', 'score']]
-            .rename(columns={'score': 'score_end'}))
-    chg  = s_df.merge(e_df, on='country')
-    chg['change'] = (chg['score_end'] - chg['score_start']).round(2)
+        s_df = (df[df['year'] == yr_start][['country', 'score']]
+                .rename(columns={'score': 'score_start'}))
+        e_df = (df[df['year'] == yr_end  ][['country', 'score']]
+                .rename(columns={'score': 'score_end'}))
+        chg  = s_df.merge(e_df, on='country')
+        chg['change'] = (chg['score_end'] - chg['score_start']).round(2)
 
-    fig5, axes5 = plt.subplots(1, 2, figsize=(14, 5))
+        fig5, axes5 = plt.subplots(1, 2, figsize=(14, 4.6))
 
-    sns.barplot(
-        data=chg.nlargest(top_n, 'change'), x='change', y='country',
-        hue='country', palette='Greens', legend=False, ax=axes5[0]
-    )
-    axes5[0].set_title(f'Most Improved ({yr_start}–{yr_end})', fontweight='bold')
-    axes5[0].set_xlabel('Score Change')
-    axes5[0].axvline(0, color='gray', linestyle='--', linewidth=0.8)
+        sns.barplot(
+            data=chg.nlargest(top_n, 'change'), x='change', y='country',
+            hue='country', palette='Greens', legend=False, ax=axes5[0]
+        )
+        axes5[0].set_title(f'Most Improved ({yr_start}–{yr_end})', fontweight='bold')
+        axes5[0].set_xlabel('Score Change')
+        axes5[0].axvline(0, color='gray', linestyle='--', linewidth=0.8)
 
-    sns.barplot(
-        data=chg.nsmallest(top_n, 'change'), x='change', y='country',
-        hue='country', palette='Reds_r', legend=False, ax=axes5[1]
-    )
-    axes5[1].set_title(f'Most Declined ({yr_start}–{yr_end})', fontweight='bold')
-    axes5[1].set_xlabel('Score Change')
-    axes5[1].axvline(0, color='gray', linestyle='--', linewidth=0.8)
+        sns.barplot(
+            data=chg.nsmallest(top_n, 'change'), x='change', y='country',
+            hue='country', palette='Reds_r', legend=False, ax=axes5[1]
+        )
+        axes5[1].set_title(f'Most Declined ({yr_start}–{yr_end})', fontweight='bold')
+        axes5[1].set_xlabel('Score Change')
+        axes5[1].axvline(0, color='gray', linestyle='--', linewidth=0.8)
 
-    plt.tight_layout()
-    st.pyplot(fig5)
-    plt.close(fig5)
+        plt.tight_layout()
+        st.pyplot(fig5)
+        plt.close(fig5)
 
     # =============================================================================
     # COUNTRY SPOTLIGHT
@@ -849,7 +991,7 @@ with tab_drilldown:
 
     if not spotlight_all.empty:
         st.markdown(
-            f'<div class="section-header">2. {spotlight_country} Spotlight</div>',
+            f'<div class="chart-card-title">2. {spotlight_country} Spotlight</div>',
             unsafe_allow_html=True
         )
 
