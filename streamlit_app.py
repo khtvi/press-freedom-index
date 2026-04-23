@@ -62,6 +62,74 @@ st.markdown("""
             radial-gradient(circle at 100% 100%, #fff1f1 0%, transparent 30%),
             var(--pf-paper);
     }
+    section[data-testid="stSidebar"] {
+        background:
+            linear-gradient(180deg, #fff7fb 0%, #ffffff 18%, #f8fbff 100%);
+        border-right: 1px solid #e6d7df;
+    }
+    section[data-testid="stSidebar"] > div {
+        padding-top: 1rem;
+    }
+    .sidebar-brand {
+        background: linear-gradient(135deg, var(--pf-deep-blue) 0%, #1d4f7a 55%, var(--pf-accent-red) 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 1rem 1rem 0.9rem 1rem;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+        margin-bottom: 0.9rem;
+    }
+    .sidebar-brand .kicker {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.82;
+        margin-bottom: 0.25rem;
+    }
+    .sidebar-brand .brand-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        margin-bottom: 0.2rem;
+    }
+    .sidebar-brand .brand-subtitle {
+        font-size: 0.82rem;
+        opacity: 0.9;
+        line-height: 1.35;
+    }
+    .sidebar-section-label {
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin: 0.25rem 0 0.45rem 0;
+        font-weight: 700;
+    }
+    .sidebar-nav {
+        display: grid;
+        gap: 0.45rem;
+        margin-bottom: 0.8rem;
+    }
+    .sidebar-nav-item {
+        background: #fff;
+        border: 1px solid #e3e8f2;
+        border-left: 4px solid var(--pf-accent-red);
+        border-radius: 12px;
+        padding: 0.55rem 0.7rem;
+        font-size: 0.88rem;
+        color: var(--pf-deep-blue);
+        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+    }
+    .sidebar-rail {
+        background: #fff;
+        border: 1px solid #e3e8f2;
+        border-radius: 14px;
+        padding: 0.8rem 0.85rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+    }
+    .sidebar-rail strong {
+        color: var(--pf-deep-blue);
+    }
     .main-title {
         font-size: 2.3rem; font-weight: 800;
         color: var(--pf-deep-blue); margin-bottom: 0.1rem;
@@ -73,6 +141,97 @@ st.markdown("""
     .dashboard-strip {
         display: flex; flex-wrap: wrap; gap: 0.6rem;
         margin-bottom: 1rem;
+    }
+    .hero-plate {
+        background:
+            linear-gradient(135deg, rgba(18,53,91,0.06), rgba(180,35,24,0.04)),
+            #ffffff;
+        border: 1px solid #dbe6f2;
+        border-radius: 18px;
+        padding: 1rem 1.1rem;
+        margin: 0.35rem 0 1rem 0;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    }
+    .hero-kicker {
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.72rem;
+        color: var(--pf-accent-red);
+        font-weight: 800;
+        margin-bottom: 0.2rem;
+    }
+    .hero-headline {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--pf-deep-blue);
+        margin-bottom: 0.25rem;
+    }
+    .hero-deck {
+        color: #334155;
+        font-size: 0.92rem;
+        line-height: 1.45;
+        margin-bottom: 0.8rem;
+    }
+    .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    .hero-stat {
+        background: #f8fbff;
+        border: 1px solid #e0e8f3;
+        border-radius: 14px;
+        padding: 0.7rem 0.85rem;
+    }
+    .hero-stat-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #64748b;
+        margin-bottom: 0.2rem;
+        font-weight: 800;
+    }
+    .hero-stat-value {
+        font-size: 1.08rem;
+        font-weight: 800;
+        color: var(--pf-deep-blue);
+        line-height: 1.25;
+    }
+    .newsline {
+        background: linear-gradient(90deg, var(--pf-deep-blue), #214f79 55%, var(--pf-accent-red));
+        color: white;
+        border-radius: 999px;
+        padding: 0.42rem 0.85rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+        margin: 0.2rem 0 0.9rem 0;
+    }
+    .control-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #ffffff 65%, #fbfdff 100%);
+        border: 1px solid #dbe6f2;
+        border-top: 4px solid var(--pf-deep-blue);
+        border-radius: 14px;
+        padding: 0.9rem 1rem 0.2rem 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .insight-card {
+        background: #ffffff;
+        border: 1px solid #dbe6f2;
+        border-radius: 10px;
+        padding: 0.65rem 0.8rem;
+        margin-bottom: 0.7rem;
+    }
+    .insight-title {
+        color: #475569;
+        font-size: 0.8rem;
+        margin-bottom: 0.15rem;
+    }
+    .insight-value {
+        color: var(--pf-deep-blue);
+        font-size: 1.05rem;
+        font-weight: 700;
     }
     .dashboard-chip {
         background: #fff;
@@ -103,12 +262,13 @@ st.markdown("""
         background: var(--pf-card);
         border: 1px solid #dbe6f2;
         border-top: 4px solid var(--pf-accent-teal);
-        border-radius: 10px;
+        border-radius: 14px;
         padding: 0.25rem 0.6rem;
-        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
     }
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
-        color: var(--pf-deep-blue);
+    [data-testid="stTabs"] button {
+        font-weight: 700;
+        letter-spacing: 0.01em;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -199,62 +359,6 @@ def find_iso_col(df):
 
 
 # =============================================================================
-# SIDEBAR
-# =============================================================================
-with st.sidebar:
-    st.markdown("## 📰 Press Freedom Index")
-    st.markdown("Data by **Reporters Without Borders (RSF)**")
-    st.divider()
-
-    if DATA_FILE is None:
-        st.error("No dataset file found in the app folder.")
-    else:
-        st.success(f"Loaded local dataset: {DATA_FILE.name}")
-
-    st.markdown("""
-**How the dashboard works:**
-1. The dataset loads automatically from the app folder
-2. Use the filters below to change the year, rankings, and spotlight country
-3. Hover over charts and the map to explore details
-    """)
-
-    st.divider()
-
-    # About the dashboard — required by rubric (explain features and user interaction)
-    with st.expander("ℹ️ About This Dashboard"):
-        st.markdown("""
-**Tool:** Streamlit (Python)
-
-**Why Streamlit?**
-Pure Python — no web development knowledge needed. Converts a data script into an interactive web app.
-
-**Features:**
-- Auto-loads the local dataset from the app folder
-- Year selector updates rankings and map in real time
-- Country multiselect filters the trend chart
-- Interactive Plotly world map with hover tooltips
-- Philippines spotlight section
-- Download cleaned data as CSV
-- Ready for deployment on Render with `openpyxl` included
-
-**How to interact:**
-1. Use the **Year** filter to change which year appears in Charts 1, 3, and 4
-2. Add or remove countries in the **Countries** multiselect to control Chart 2
-3. Change the ranking size and comparison years in the sidebar
-4. Hover over the world map to see each country's score
-5. Expand **View Raw Data** at the bottom to browse and download
-
-**Deployment note:**
-This app is set up to deploy on Render. Keep `requirements.txt` and `render.yaml` in sync if you change dependencies or the start command.
-        """)
-
-    st.divider()
-    st.caption("Built with Python · numpy · pandas · seaborn · Plotly · Streamlit")
-    st.caption("BS Computer Science — Year 3")
-    st.caption("Data: RSF via Kaggle")
-
-
-# =============================================================================
 # PAGE HEADER
 # =============================================================================
 st.markdown(
@@ -292,6 +396,50 @@ latest_df   = df[df['year'] == latest_year].copy()
 # Used as the reference line in the Philippines chart — consistent across all x-values
 overall_avg = float(np.mean(df.groupby('year')['score'].mean().values))
 
+# =============================================================================
+# SIDEBAR BRANDING
+# =============================================================================
+with st.sidebar:
+    st.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="kicker">Press Freedom Desk</div>
+            <div class="brand-title">World Press Freedom Index</div>
+            <div class="brand-subtitle">A newsroom-style dashboard for comparing freedom, pressure, and change across countries.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="sidebar-section-label">Navigation</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="sidebar-nav">
+            <div class="sidebar-nav-item">Overview</div>
+            <div class="sidebar-nav-item">Trends</div>
+            <div class="sidebar-nav-item">Country Drilldown</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="sidebar-section-label">Press Pulse</div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="sidebar-rail">
+            <strong>Coverage:</strong> {df["year"].min()}–{df["year"].max()}<br>
+            <strong>Countries:</strong> {df["country"].nunique()}<br>
+            <strong>Current year:</strong> {latest_year}<br>
+            <strong>Latest avg score:</strong> {latest_df['score'].mean():.1f}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="sidebar-section-label">About</div>', unsafe_allow_html=True)
+    st.caption("Built with Python, pandas, Plotly, seaborn, and Streamlit.")
+    st.caption("Designed to deploy on Render.")
+
 st.markdown(
     (
         '<div class="dashboard-strip">'
@@ -306,44 +454,47 @@ st.markdown(
 
 
 # =============================================================================
-# SIDEBAR FILTERS (rendered after file loads)
+# DASHBOARD CONTROLS
 # =============================================================================
-with st.sidebar:
-    st.divider()
-    st.markdown("### Dashboard Controls")
+st.markdown('<div class="control-panel">', unsafe_allow_html=True)
+st.markdown('<div class="section-header">Control Center</div>', unsafe_allow_html=True)
 
+default_countries = [
+    c for c in
+    ['Norway', 'Finland', 'Philippines', 'China', 'Russia', 'United States']
+    if c in df['country'].values
+]
+
+ctrl1, ctrl2, ctrl3 = st.columns([1, 1, 1])
+with ctrl1:
     selected_year = st.selectbox(
         "Year for Rankings & Map",
         options=list(reversed(years)),
         index=0
     )
-
-    default_countries = [
-        c for c in
-        ['Norway', 'Finland', 'Philippines', 'China', 'Russia', 'United States']
-        if c in df['country'].values
-    ]
-
-    custom_countries = st.multiselect(
-        "Countries to track (Trend chart)",
-        options=sorted(df['country'].unique()),
-        default=default_countries
-    )
-
+with ctrl2:
     top_n = st.slider(
-        "Countries shown in ranking charts",
+        "Countries in ranking charts",
         min_value=5,
         max_value=20,
         value=10
     )
-
+with ctrl3:
     compare_years = st.slider(
-        "Compare years for change chart",
+        "Compare years",
         min_value=min(years),
         max_value=max(years),
         value=(min(years), max(years))
     )
 
+ctrl4, ctrl5 = st.columns([2, 1])
+with ctrl4:
+    custom_countries = st.multiselect(
+        "Countries to track (Trend chart)",
+        options=sorted(df['country'].unique()),
+        default=default_countries
+    )
+with ctrl5:
     spotlight_options = sorted(df['country'].unique())
     spotlight_default = (
         spotlight_options.index('Philippines')
@@ -355,6 +506,8 @@ with st.sidebar:
         options=spotlight_options,
         index=spotlight_default
     )
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 selected_df = df[df['year'] == selected_year].copy()
 
@@ -394,6 +547,65 @@ with c5:
         st.metric("Most Free", best)
 
 st.divider()
+
+best_row = selected_df.loc[selected_df['score'].idxmax()]
+worst_row = selected_df.loc[selected_df['score'].idxmin()]
+yr_start, yr_end = compare_years
+
+start_mean_series = df[df['year'] == yr_start]['score']
+end_mean_series = df[df['year'] == yr_end]['score']
+trend_delta = float(end_mean_series.mean() - start_mean_series.mean())
+trend_word = "improved" if trend_delta > 0 else "declined"
+
+ic1, ic2, ic3 = st.columns(3)
+with ic1:
+    st.markdown(
+        f'<div class="insight-card"><div class="insight-title">Top country in {selected_year}</div>'
+        f'<div class="insight-value">{best_row["country"]} ({best_row["score"]:.1f})</div></div>',
+        unsafe_allow_html=True
+    )
+with ic2:
+    st.markdown(
+        f'<div class="insight-card"><div class="insight-title">Lowest country in {selected_year}</div>'
+        f'<div class="insight-value">{worst_row["country"]} ({worst_row["score"]:.1f})</div></div>',
+        unsafe_allow_html=True
+    )
+with ic3:
+    st.markdown(
+        f'<div class="insight-card"><div class="insight-title">Global change ({yr_start}-{yr_end})</div>'
+        f'<div class="insight-value">{trend_delta:+.2f} points ({trend_word})</div></div>',
+        unsafe_allow_html=True
+    )
+
+st.divider()
+
+st.markdown(
+    (
+        '<div class="hero-plate">'
+        '<div class="hero-kicker">Front Page Briefing</div>'
+        '<div class="hero-headline">Press freedom is shifting, but the editorial map still has familiar fault lines.</div>'
+        '<div class="hero-deck">'
+        f'In {selected_year}, <b>{best_row["country"]}</b> leads the ranking while <b>{worst_row["country"]}</b> sits at the bottom. '
+        f'The selected-year average is <b>{yr_avg:.1f}</b>, and the spotlight country is <b>{spotlight_country}</b>.'
+        '</div>'
+        '<div class="hero-grid">'
+        f'<div class="hero-stat"><div class="hero-stat-label">Most free</div><div class="hero-stat-value">{best_row["country"]}</div></div>'
+        f'<div class="hero-stat"><div class="hero-stat-label">Lowest score</div><div class="hero-stat-value">{worst_row["country"]}</div></div>'
+        f'<div class="hero-stat"><div class="hero-stat-label">Latest average</div><div class="hero-stat-value">{yr_avg:.1f} / 100</div></div>'
+        '</div>'
+        '</div>'
+    ),
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    (
+        '<div class="newsline">'
+        f'Breaking line: {spotlight_country} is {spotlight_row["score"].iloc[0] - yr_avg:+.1f} points vs the global average in {selected_year}.'
+        '</div>'
+    ),
+    unsafe_allow_html=True
+)
 
 
 tab_overview, tab_trends, tab_drilldown = st.tabs([
@@ -543,7 +755,7 @@ with tab_trends:
         st.pyplot(fig2)
         plt.close(fig2)
     else:
-        st.info("Select at least one country in the sidebar to show the trend chart.")
+        st.info("Select at least one country in Control Center to show the trend chart.")
 
     # =============================================================================
     # VISUALIZATION 6 — Score Distribution Box Plot (numpy annotations)
@@ -600,8 +812,6 @@ with tab_drilldown:
         '<div class="section-header">1. Most Improved vs Most Declined</div>',
         unsafe_allow_html=True
     )
-
-    yr_start, yr_end = compare_years
 
     s_df = (df[df['year'] == yr_start][['country', 'score']]
             .rename(columns={'score': 'score_start'}))
