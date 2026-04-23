@@ -143,6 +143,7 @@ body{
   background-image:repeating-linear-gradient(0deg,transparent,transparent 29px,rgba(0,0,0,.04) 29px,rgba(0,0,0,.04) 30px);
 }
 .masthead{background:var(--ink);color:var(--paper);border-bottom:4px solid var(--red)}
+.site-header{position:sticky;top:0;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.2)}
 .masthead-top{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.8rem;border-bottom:1px solid rgba(255,255,255,.12)}
 .masthead-title{font-size:1.95rem;font-weight:900;line-height:1;letter-spacing:-.02em}
 .masthead-title span{color:var(--red2)}
@@ -159,9 +160,6 @@ body{
 .layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 122px)}
 .sidebar{background:var(--ink2);color:var(--paper);padding:1.5rem 1.2rem;border-right:2px solid var(--red);display:flex;flex-direction:column;gap:1.3rem}
 .sidebar-heading{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--red2);padding-bottom:7px;border-bottom:1px solid rgba(255,255,255,.12)}
-.dataset-box{border:1.5px dashed rgba(255,255,255,.16);border-radius:4px;background:rgba(255,255,255,.03);padding:1rem;text-align:center}
-.dataset-name{font-size:11px;font-weight:700;color:var(--paper);margin-top:.45rem}
-.dataset-sub{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.42);margin-top:.45rem}
 .status-ok{display:flex;align-items:center;gap:7px;background:rgba(31,122,69,.22);border:1px solid var(--green);border-radius:4px;padding:.7rem .8rem;font-family:var(--mono);font-size:11px;color:var(--green2)}
 .dot-green{width:7px;height:7px;border-radius:50%;background:var(--green2)}
 .filter-group{display:flex;flex-direction:column;gap:7px}
@@ -226,6 +224,7 @@ select option{background:var(--ink2);color:var(--paper)}
 .legend-grad{width:150px;height:9px;border-radius:4px;background:linear-gradient(90deg,#c43a28,#d79a16,#31af62)}
 .legend-labels{display:flex;justify-content:space-between;width:150px;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.62);margin-top:4px}
 .canvas-holder{height:260px}
+.plot-holder{height:320px}
 .ph-grid{display:grid;grid-template-columns:1fr 205px;gap:14px}
 .ph-stat{display:flex;flex-direction:column;gap:9px}
 .ph-stat-item{background:var(--paper2);border-left:3px solid #003a8c;padding:.75rem .85rem}
@@ -244,7 +243,7 @@ select option{background:var(--ink2);color:var(--paper)}
 </head>
 <body>
 <div class="tooltip-box" id="tooltip"></div>
-<header>
+<header class="site-header">
   <div class="masthead">
     <div class="masthead-top">
       <div class="masthead-title">THE PRESS FREEDOM <span>INDEX</span></div>
@@ -258,6 +257,7 @@ select option{background:var(--ink2);color:var(--paper)}
       <div class="nav-item" data-target="section-trends">Trends</div>
       <div class="nav-item" data-target="section-zones">Zones</div>
       <div class="nav-item" data-target="section-map">World Map</div>
+      <div class="nav-item" data-target="section-insights">Insights</div>
       <div class="nav-item" data-target="section-changes">Changes</div>
       <div class="nav-item" data-target="section-spotlight">Spotlight</div>
     </nav>
@@ -271,12 +271,7 @@ select option{background:var(--ink2);color:var(--paper)}
 <div class="layout">
   <aside class="sidebar">
     <div>
-      <div class="sidebar-heading">Dataset</div>
-      <div class="dataset-box">
-        <div style="font-size:28px;color:rgba(255,255,255,.72)">▤</div>
-        <div class="dataset-name">{{ dataset_name }}</div>
-        <div class="dataset-sub">Local workbook loaded for analysis</div>
-      </div>
+      <div class="sidebar-heading">Data Status</div>
       <div class="status-ok" style="margin-top:10px">
         <div class="dot-green"></div>
         <span>{{ row_count }} rows · {{ country_count }} countries · loaded</span>
@@ -408,9 +403,27 @@ select option{background:var(--ink2);color:var(--paper)}
       </div>
     </section>
 
-    <section class="section" id="section-changes">
+    <section class="section" id="section-insights">
       <div class="section-label">
         <span class="section-number">05</span>
+        <span class="section-title">Deeper Insights</span>
+        <span class="section-sub">Distribution and score-rank relationship</span>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Score Distribution</div>
+          <div class="plot-holder" id="distributionPlot"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Rank vs Score</div>
+          <div class="plot-holder" id="scatterPlot"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="section-changes">
+      <div class="section-label">
+        <span class="section-number">06</span>
         <span class="section-title">Most Improved vs Declined</span>
         <span class="section-sub">{{ start_year }} to {{ latest_year }}</span>
       </div>
@@ -428,7 +441,7 @@ select option{background:var(--ink2);color:var(--paper)}
 
     <section class="section" id="section-spotlight">
       <div class="section-label">
-        <span class="section-number">06</span>
+        <span class="section-number">07</span>
         <span class="section-title" id="spotlightHeading">Country Spotlight</span>
         <span class="section-sub">Filtered context</span>
       </div>
@@ -759,6 +772,61 @@ function buildMap(rows){
     }
   });
 }
+function buildDistributionPlot(rows){
+  if (!rows.length) {
+    renderEmpty('distributionPlot', 'No countries match the current filters.');
+    return;
+  }
+  Plotly.react('distributionPlot', [{
+    type: 'histogram',
+    x: rows.map(row => row.score),
+    nbinsx: 14,
+    marker: {color: '#c29018', line: {color: '#9d6f0f', width: 1}},
+    hovertemplate: 'Score bin: %{x}<br>Countries: %{y}<extra></extra>'
+  }], {
+    margin: {l: 35, r: 15, t: 8, b: 38},
+    paper_bgcolor: '#ffffff',
+    plot_bgcolor: '#ffffff',
+    font: {family: 'Georgia, serif', size: 12, color: '#101010'},
+    xaxis: {title: 'Score', gridcolor: 'rgba(0,0,0,.07)', range: [0, 100]},
+    yaxis: {title: 'Countries', gridcolor: 'rgba(0,0,0,.07)'}
+  }, {displayModeBar:false, responsive:true});
+}
+function buildScatterPlot(rows){
+  if (!rows.length) {
+    renderEmpty('scatterPlot', 'No countries match the current filters.');
+    return;
+  }
+  const spotlight = spotlightRow(rows);
+  const markerSizes = rows.map(row => row.country === spotlight?.country ? 14 : 9);
+  const markerColors = rows.map(row => row.country === spotlight?.country ? '#c43a28' : '#163a5f');
+  Plotly.react('scatterPlot', [{
+    type: 'scatter',
+    mode: 'markers',
+    x: rows.map(row => row.rank),
+    y: rows.map(row => row.score),
+    text: rows.map(row => `${row.country}<br>Rank: #${row.rank}<br>Score: ${formatNumber(row.score)}<br>Zone: ${row.zone}`),
+    hoverinfo: 'text',
+    marker: {size: markerSizes, color: markerColors, opacity: 0.82, line: {color: '#ffffff', width: 1}}
+  }], {
+    margin: {l: 40, r: 15, t: 8, b: 40},
+    paper_bgcolor: '#ffffff',
+    plot_bgcolor: '#ffffff',
+    font: {family: 'Georgia, serif', size: 12, color: '#101010'},
+    xaxis: {title: 'Rank', autorange: 'reversed', gridcolor: 'rgba(0,0,0,.07)'},
+    yaxis: {title: 'Score', range: [0, 100], gridcolor: 'rgba(0,0,0,.07)'}
+  }, {displayModeBar:false, responsive:true});
+  const panel = document.getElementById('scatterPlot');
+  panel.on('plotly_click', event => {
+    const point = event?.points?.[0];
+    if (!point) return;
+    const country = point.text?.split('<br>')[0];
+    if (country) {
+      state.spotlight = country;
+      refreshAll();
+    }
+  });
+}
 function activeTrendCountries(rows){
   const available = new Set(rows.map(row => row.country));
   const active = state.countries.filter(country => available.has(country));
@@ -889,6 +957,8 @@ function refreshAll(){
   buildBarList('bottom10bars', sortAsc(rows).slice(0, 10), 'red');
   buildZoneList(rows);
   buildMap(rows);
+  buildDistributionPlot(rows);
+  buildScatterPlot(rows);
   buildChangeList('improved', rows, true);
   buildChangeList('declined', rows, false);
   buildTrendChart(rows);
