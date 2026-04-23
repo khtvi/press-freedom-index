@@ -1,11 +1,3 @@
-"""
-World Press Freedom Index Dashboard
-==================================
-Editorial Flask dashboard in a single Python file.
-Run locally with: python dash_app.py
-Deploy with: gunicorn dash_app:server
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,10 +7,8 @@ import warnings
 import pandas as pd
 from flask import Flask, render_template_string
 
-
 warnings.filterwarnings("ignore")
 APP_TITLE = "Press Freedom Index Dashboard"
-
 
 def find_data_file() -> Path | None:
     candidates = [
@@ -33,7 +23,6 @@ def find_data_file() -> Path | None:
         if candidate.exists():
             return candidate
     return None
-
 
 def standardize_columns(frame: pd.DataFrame) -> pd.DataFrame:
     frame = frame.copy()
@@ -96,7 +85,6 @@ SPOTLIGHT_DEFAULT = "Philippines" if "Philippines" in DF["country"].values else 
 ZONE_OPTIONS = sorted(DF["zone"].dropna().astype(str).unique().tolist())
 LATEST_AVG = float(LATEST_DF["score"].mean())
 
-
 def build_payload() -> dict:
     all_rows = DF[[c for c in ["year", "country", "score", "rank", "zone", "iso"] if c in DF.columns]].copy()
     return {
@@ -110,7 +98,6 @@ def build_payload() -> dict:
         "spotlightDefault": SPOTLIGHT_DEFAULT,
         "allRows": all_rows.to_dict(orient="records"),
     }
-
 
 DATA_JSON = json.dumps(build_payload())
 
@@ -1035,7 +1022,6 @@ window.addEventListener('resize', () => {
 </body>
 </html>
 """
-
 
 @app.route("/")
 def index():
